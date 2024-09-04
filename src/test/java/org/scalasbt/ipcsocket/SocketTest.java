@@ -24,6 +24,8 @@ public class SocketTest extends BaseSocketSetup {
   public void testAssertEquals() throws IOException, InterruptedException {
     withSocket(
         sock -> {
+          System.out.println("SocketTest#testAssertEquals(" + Boolean.toString(useJNI()) + ")");
+
           ServerSocket serverSocket = newServerSocket(sock);
 
           CompletableFuture<Boolean> server =
@@ -54,6 +56,9 @@ public class SocketTest extends BaseSocketSetup {
   public void throwIOExceptionOnMissingFile() throws IOException, InterruptedException {
     withSocket(
         sock -> {
+          System.out.println(
+              "SocketTest#throwIOExceptionOnMissingFile(" + Boolean.toString(useJNI()) + ")");
+
           boolean caughtIOException = false;
           Files.deleteIfExists(Paths.get(sock));
           try {
@@ -70,6 +75,8 @@ public class SocketTest extends BaseSocketSetup {
   public void shortReadWrite() throws IOException, InterruptedException {
     withSocket(
         sock -> {
+          System.out.println("SocketTest#shortReadWrite(" + Boolean.toString(useJNI()) + ")");
+
           ServerSocket serverSocket = newServerSocket(sock);
 
           CompletableFuture<Boolean> server =
@@ -91,6 +98,7 @@ public class SocketTest extends BaseSocketSetup {
           byte[] printedBytes = printed.getBytes();
           out.write(printedBytes, 0, 4);
           out.write(printedBytes, 4, 5);
+          out.flush();
           byte[] buf = new byte[16];
           assertEquals("Did not read 4 bytes", in.read(buf, 0, 4), 4);
           assertEquals("Did not read 5 bytes", in.read(buf, 4, 6), 5);

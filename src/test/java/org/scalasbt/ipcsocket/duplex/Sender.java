@@ -24,6 +24,7 @@ public class Sender implements Runnable {
       for (int i = 0; i < sendMessages; i++) {
         System.out.println("[" + name + "] sending msg: " + i);
         out.println("hello" + i);
+        out.flush();
         Thread.sleep(Math.abs(random.nextInt(1000)));
       }
     } catch (IOException | InterruptedException e) {
