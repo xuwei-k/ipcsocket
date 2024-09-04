@@ -34,13 +34,22 @@ class NativeLoader {
   private static final String pid =
       isWindows ? "" : ManagementFactory.getRuntimeMXBean().getName().replaceAll("@.*", "");
 
-  private static Path tmpDir() {
+  private static Path runtimeDir() {
     String prop = System.getProperty("sbt.ipcsocket.tmpdir");
-    String tmp = System.getProperty("java.io.tmpdir");
     if (prop != null) {
       return Paths.get(prop);
     } else {
-      return Paths.get(tmp).resolve(".sbt").resolve("ipcsocket");
+      String runtimeDir = System.getenv("XDG_RUNTIME_DIR");
+      if (runtimeDir == null) {
+        runtimeDir = System.getProperty("java.io.tmpdir");
+      }
+      String home = System.getProperty("user.home");
+      if (home == null) {
+        home = "unknown_home";
+      }
+      return Paths.get(runtimeDir)
+          .resolve(".sbt" + Integer.toString(home.hashCode()))
+          .resolve("ipcsocket");
     }
   }
 
@@ -72,7 +81,7 @@ class NativeLoader {
         final URL url = NativeLoader.class.getClassLoader().getResource(resource);
         if (url == null) throw new UnsatisfiedLinkError(resource + " not found on classpath");
         try {
-          final Path base = Files.createDirectories(tmpDir());
+          final Path base = Files.createDirectories(runtimeDir());
           final Path output = Files.createTempFile(base, tempFilePrefix, extension);
           try (final InputStream in = url.openStream();
               final FileChannel channel = FileChannel.open(output, StandardOpenOption.WRITE)) {
@@ -131,7 +140,7 @@ class NativeLoader {
     public void run() {
       try {
         Files.walkFileTree(
-            tmpDir(),
+            runtimeDir(),
             new FileVisitor<Path>() {
               @Override
               public FileVisitResult preVisitDirectory(
