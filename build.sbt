@@ -9,7 +9,7 @@ val jnaVersion = "5.12.0"
 val jna = "net.java.dev.jna" % "jna" % jnaVersion
 
 val jnaPlatform = "net.java.dev.jna" % "jna-platform" % jnaVersion
-val junitInterface = "com.novocode" % "junit-interface" % "0.11"
+val junitInterface = "com.github.sbt" % "junit-interface" % "0.13.3"
 val nativePlatform = settingKey[String]("The target platform")
 val nativeArch = settingKey[String]("The target architecture")
 val nativeArtifact = settingKey[Path]("The target artifact location")
