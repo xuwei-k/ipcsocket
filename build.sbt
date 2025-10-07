@@ -223,7 +223,7 @@ def eval(cmd: Seq[String], logger: Logger): Unit = {
 }
 
 Test / unmanagedSourceDirectories ++= {
-  if(scala.util.Properties.isJavaAtLeast("17")) {
+  if (scala.util.Properties.isJavaAtLeast("17")) {
     Seq((Test / sourceDirectory).value / "java-17")
   } else {
     Nil

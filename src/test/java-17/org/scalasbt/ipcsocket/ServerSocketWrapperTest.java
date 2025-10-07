@@ -1,5 +1,7 @@
 package org.scalasbt.ipcsocket;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -19,35 +21,32 @@ import java.util.stream.Stream;
 import static org.junit.Assert.assertEquals;
 
 public class ServerSocketWrapperTest {
-  private interface Action {
-    void apply(SocketWrapper a, SocketChannel b) throws Throwable;
+  private ServerSocketWrapper serverSocket;
+  private SocketWrapper server;
+  private SocketChannel client;
+  private Path dir;
+  private Path socketPath;
+
+  @Before
+  public void before() throws IOException, ReflectiveOperationException {
+    dir = Files.createTempDirectory(ServerSocketWrapperTest.class.getSimpleName());
+    socketPath = dir.resolve("socket");
+    Files.deleteIfExists(socketPath);
+    if (!Files.isDirectory(dir)) {
+      Files.createDirectories(dir);
+    }
+    serverSocket =
+        ServerSocketWrapper.newJdkUnixDomainSocket(socketPath.toFile().getAbsolutePath());
+    client = SocketChannel.open(StandardProtocolFamily.UNIX);
+    client.connect(UnixDomainSocketAddress.of(socketPath.toFile().getAbsolutePath()));
+    server = serverSocket.accept();
   }
 
-  private void withServerAndClient(Action action) throws Throwable {
-    try {
-      Path dir = Files.createTempDirectory(ServerSocketWrapperTest.class.getSimpleName());
-      Path path = dir.resolve("socket");
-      try {
-        if (!Files.isDirectory(dir)) {
-          Files.createDirectories(dir);
-        }
-        ServerSocketWrapper serverSocket =
-            ServerSocketWrapper.newJdkUnixDomainSocket(path.toFile().getAbsolutePath());
-        try {
-          SocketChannel client = SocketChannel.open(StandardProtocolFamily.UNIX);
-          client.connect(UnixDomainSocketAddress.of(path.toFile().getAbsolutePath()));
-          SocketWrapper server = serverSocket.accept();
-          action.apply(server, client);
-        } finally {
-          serverSocket.close();
-        }
-      } finally {
-        Files.deleteIfExists(path);
-        Files.deleteIfExists(dir);
-      }
-    } catch (IOException | ReflectiveOperationException e) {
-      throw new RuntimeException(e);
-    }
+  @After
+  public void after() throws IOException {
+    serverSocket.close();
+    Files.deleteIfExists(socketPath);
+    Files.deleteIfExists(dir);
   }
 
   private List<Byte> readAll(SocketChannel client) throws IOException {
@@ -65,7 +64,6 @@ public class ServerSocketWrapperTest {
 
   private static final List<Integer> intValues;
   private static final List<Byte> byteValues;
-  private static final boolean hasJavaNetUnixDomainSocketAddress;
 
   private static final byte[] byteArray() {
     byte[] array = new byte[byteValues.size()];
@@ -85,49 +83,36 @@ public class ServerSocketWrapperTest {
     byteValues =
         Collections.unmodifiableList(
             intValues.stream().map(Integer::byteValue).collect(Collectors.toList()));
-
-    boolean hasUnixDomainSocketAddress = false;
-    try {
-      Class.forName("java.net.UnixDomainSocketAddress");
-      hasUnixDomainSocketAddress = true;
-    } catch (ClassNotFoundException e) {
-    }
-    hasJavaNetUnixDomainSocketAddress = hasUnixDomainSocketAddress;
   }
 
   @Test
   public void writeInt() throws Throwable {
-    withServerAndClient(
-        (server, client) -> {
-          try {
-            intValues.forEach(
-                x -> {
-                  try {
-                    server.write(x);
-                  } catch (IOException e) {
-                    throw new RuntimeException(e);
-                  }
-                });
-          } finally {
-            server.close();
-          }
-          List<Byte> actual = readAll(client);
-          assertEquals(byteValues, actual);
-        });
+
+    try {
+      intValues.forEach(
+          x -> {
+            try {
+              server.write(x);
+            } catch (IOException e) {
+              throw new RuntimeException(e);
+            }
+          });
+    } finally {
+      server.close();
+    }
+    List<Byte> actual = readAll(client);
+    assertEquals(byteValues, actual);
   }
 
   @Test
   public void writeByteArray() throws Throwable {
-    withServerAndClient(
-        (server, client) -> {
-          try {
-            server.write(byteArray());
-          } finally {
-            server.close();
-          }
-          List<Byte> actual = readAll(client);
-          assertEquals(byteValues, actual);
-        });
+    try {
+      server.write(byteArray());
+    } finally {
+      server.close();
+    }
+    List<Byte> actual = readAll(client);
+    assertEquals(byteValues, actual);
   }
 
   @Test
@@ -135,43 +120,37 @@ public class ServerSocketWrapperTest {
     final int offset = 100;
     final int length = 200;
 
-    withServerAndClient(
-        (server, client) -> {
-          byte[] array = byteArray();
-          try {
-            server.write(array, offset, length);
-          } finally {
-            server.close();
-          }
-          final List<Byte> actual = readAll(client);
-          final List<Byte> expect = new ArrayList<>();
-          for (int i = offset; i < (offset + length); i++) {
-            expect.add(array[i]);
-          }
-          assertEquals(expect, actual);
-        });
+    byte[] array = byteArray();
+    try {
+      server.write(array, offset, length);
+    } finally {
+      server.close();
+    }
+    final List<Byte> actual = readAll(client);
+    final List<Byte> expect = new ArrayList<>();
+    for (int i = offset; i < (offset + length); i++) {
+      expect.add(array[i]);
+    }
+    assertEquals(expect, actual);
   }
 
   @Test
   public void read() throws Throwable {
-    withServerAndClient(
-        (server, client) -> {
-          try {
-            client.write(ByteBuffer.wrap(byteArray()));
-          } finally {
-            client.close();
-          }
+    try {
+      client.write(ByteBuffer.wrap(byteArray()));
+    } finally {
+      client.close();
+    }
 
-          List<Integer> actual = new ArrayList<>();
-          int res;
-          do {
-            res = server.read();
-            if (res != -1) {
-              actual.add(res);
-            }
-          } while (res != -1);
-          List<Integer> expect = intValues.stream().map(i -> i & 0xff).collect(Collectors.toList());
-          assertEquals(expect, actual);
-        });
+    List<Integer> actual = new ArrayList<>();
+    int res;
+    do {
+      res = server.read();
+      if (res != -1) {
+        actual.add(res);
+      }
+    } while (res != -1);
+    List<Integer> expect = intValues.stream().map(i -> i & 0xff).collect(Collectors.toList());
+    assertEquals(expect, actual);
   }
 }
