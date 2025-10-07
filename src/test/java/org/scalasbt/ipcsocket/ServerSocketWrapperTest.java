@@ -2,6 +2,7 @@ package org.scalasbt.ipcsocket;
 
 import org.junit.Test;
 
+import java.lang.reflect.Array;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.ProtocolFamily;
@@ -19,6 +20,7 @@ import java.util.Random;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
@@ -76,6 +78,14 @@ public class ServerSocketWrapperTest {
   private static final List<Byte> byteValues;
   private static final boolean hasJavaNetUnixDomainSocketAddress;
 
+  private static final byte[] byteArray() {
+    byte[] array = new byte[byteValues.size()];
+    for (int i = 0; i < array.length; i++) {
+      array[i] = byteValues.get(i);
+    }
+    return array;
+  }
+
   static {
     final List<Integer> list =
         Stream.<Integer>iterate((int) Byte.MIN_VALUE, x -> x + 1)
@@ -99,6 +109,7 @@ public class ServerSocketWrapperTest {
   @Test
   public void writeInt() throws Throwable {
     assumeTrue(hasJavaNetUnixDomainSocketAddress);
+
     withServerAndClient(
         (server, client) -> {
           try {
@@ -113,8 +124,72 @@ public class ServerSocketWrapperTest {
           } finally {
             server.close();
           }
-          List<Byte> res = readAll(client);
-          assertEquals(byteValues, res);
+          List<Byte> actual = readAll(client);
+          assertEquals(byteValues, actual);
+        });
+  }
+
+  @Test
+  public void writeByteArray() throws Throwable {
+    assumeTrue(hasJavaNetUnixDomainSocketAddress);
+    withServerAndClient(
+        (server, client) -> {
+          try {
+            server.write(byteArray());
+          } finally {
+            server.close();
+          }
+          List<Byte> actual = readAll(client);
+          assertEquals(byteValues, actual);
+        });
+  }
+
+  @Test
+  public void writeByteArrayOffsetLength() throws Throwable {
+    assumeTrue(hasJavaNetUnixDomainSocketAddress);
+
+    final int offset = 100;
+    final int length = 200;
+
+    withServerAndClient(
+        (server, client) -> {
+          byte[] array = byteArray();
+          try {
+            server.write(array, offset, length);
+          } finally {
+            server.close();
+          }
+          final List<Byte> actual = readAll(client);
+          final List<Byte> expect = new ArrayList<>();
+          for (int i = offset; i < (offset + length); i++) {
+            expect.add(array[i]);
+          }
+          assertEquals(expect, actual);
+        });
+  }
+
+  @Test
+  public void read() throws Throwable {
+    assumeTrue(hasJavaNetUnixDomainSocketAddress);
+
+    withServerAndClient(
+        (server, client) -> {
+          try {
+            client.write(ByteBuffer.wrap(byteArray()));
+          } finally {
+            client.close();
+          }
+
+          List<Integer> actual = new ArrayList<>();
+          int res;
+          do {
+            res = server.read();
+            if (res != -1) {
+              actual.add(res);
+            }
+          } while (res != -1);
+          List<Integer> expect = intValues.stream().map(i -> i & 0xff).collect(Collectors.toList());
+          assertEquals(expect, actual);
         });
   }
 }
