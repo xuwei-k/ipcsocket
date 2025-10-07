@@ -2,29 +2,21 @@ package org.scalasbt.ipcsocket;
 
 import org.junit.Test;
 
-import java.lang.reflect.Array;
 import java.io.IOException;
-import java.lang.reflect.Method;
-import java.net.ProtocolFamily;
 import java.net.ServerSocket;
+import java.net.StandardProtocolFamily;
+import java.net.UnixDomainSocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Random;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assume.assumeTrue;
 
 public class ServerSocketWrapperTest {
   private interface Action {
@@ -42,11 +34,8 @@ public class ServerSocketWrapperTest {
         ServerSocketWrapper serverSocket =
             ServerSocketWrapper.newJdkUnixDomainSocket(path.toFile().getAbsolutePath());
         try {
-          Method openMethod = SocketChannel.class.getMethod("open", ProtocolFamily.class);
-          SocketChannel client =
-              (SocketChannel) openMethod.invoke(null, ServerSocketWrapper.unixProtocolFamily());
-          client.connect(
-              ServerSocketWrapper.unixDomainSocketAddress(path.toFile().getAbsolutePath()));
+          SocketChannel client = SocketChannel.open(StandardProtocolFamily.UNIX);
+          client.connect(UnixDomainSocketAddress.of(path.toFile().getAbsolutePath()));
           SocketWrapper server = serverSocket.accept();
           action.apply(server, client);
         } finally {
@@ -108,8 +97,6 @@ public class ServerSocketWrapperTest {
 
   @Test
   public void writeInt() throws Throwable {
-    assumeTrue(hasJavaNetUnixDomainSocketAddress);
-
     withServerAndClient(
         (server, client) -> {
           try {
@@ -131,7 +118,6 @@ public class ServerSocketWrapperTest {
 
   @Test
   public void writeByteArray() throws Throwable {
-    assumeTrue(hasJavaNetUnixDomainSocketAddress);
     withServerAndClient(
         (server, client) -> {
           try {
@@ -146,8 +132,6 @@ public class ServerSocketWrapperTest {
 
   @Test
   public void writeByteArrayOffsetLength() throws Throwable {
-    assumeTrue(hasJavaNetUnixDomainSocketAddress);
-
     final int offset = 100;
     final int length = 200;
 
@@ -170,8 +154,6 @@ public class ServerSocketWrapperTest {
 
   @Test
   public void read() throws Throwable {
-    assumeTrue(hasJavaNetUnixDomainSocketAddress);
-
     withServerAndClient(
         (server, client) -> {
           try {

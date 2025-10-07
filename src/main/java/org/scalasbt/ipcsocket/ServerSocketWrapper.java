@@ -13,14 +13,14 @@ import java.util.Arrays;
 public abstract class ServerSocketWrapper {
   private ServerSocketWrapper() {}
 
-  static SocketAddress unixDomainSocketAddress(final String pathName)
+  private static SocketAddress unixDomainSocketAddress(final String pathName)
       throws ReflectiveOperationException {
     final Class<?> clazz = Class.forName("java.net.UnixDomainSocketAddress");
     final Method method = clazz.getMethod("of", String.class);
     return (SocketAddress) method.invoke(null, pathName);
   }
 
-  static ProtocolFamily unixProtocolFamily() {
+  private static ProtocolFamily unixProtocolFamily() {
     return Arrays.stream(StandardProtocolFamily.class.getEnumConstants())
         .filter(a -> "UNIX".equals(a.name()))
         .findFirst()
