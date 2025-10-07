@@ -51,9 +51,9 @@ public class ServerSocketWrapperTest {
 
   private List<Byte> readAll(SocketChannel client) throws IOException {
     int res;
-    List<Byte> values = new ArrayList<>();
+    final List<Byte> values = new ArrayList<>();
     do {
-      ByteBuffer buf = ByteBuffer.allocate(1);
+      final ByteBuffer buf = ByteBuffer.allocate(1);
       res = client.read(buf);
       if (res != -1) {
         values.add(buf.get(0));
@@ -66,7 +66,7 @@ public class ServerSocketWrapperTest {
   private static final List<Byte> byteValues;
 
   private static final byte[] byteArray() {
-    byte[] array = new byte[byteValues.size()];
+    final byte[] array = new byte[byteValues.size()];
     for (int i = 0; i < array.length; i++) {
       array[i] = byteValues.get(i);
     }
@@ -87,7 +87,6 @@ public class ServerSocketWrapperTest {
 
   @Test
   public void writeInt() throws Throwable {
-
     try {
       intValues.forEach(
           x -> {
@@ -100,7 +99,7 @@ public class ServerSocketWrapperTest {
     } finally {
       server.close();
     }
-    List<Byte> actual = readAll(client);
+    final List<Byte> actual = readAll(client);
     assertEquals(byteValues, actual);
   }
 
@@ -111,7 +110,7 @@ public class ServerSocketWrapperTest {
     } finally {
       server.close();
     }
-    List<Byte> actual = readAll(client);
+    final List<Byte> actual = readAll(client);
     assertEquals(byteValues, actual);
   }
 
@@ -119,8 +118,7 @@ public class ServerSocketWrapperTest {
   public void writeByteArrayOffsetLength() throws Throwable {
     final int offset = 100;
     final int length = 200;
-
-    byte[] array = byteArray();
+    final byte[] array = byteArray();
     try {
       server.write(array, offset, length);
     } finally {
@@ -142,7 +140,7 @@ public class ServerSocketWrapperTest {
       client.close();
     }
 
-    List<Integer> actual = new ArrayList<>();
+    final List<Integer> actual = new ArrayList<>();
     int res;
     do {
       res = server.read();
@@ -150,7 +148,7 @@ public class ServerSocketWrapperTest {
         actual.add(res);
       }
     } while (res != -1);
-    List<Integer> expect = intValues.stream().map(i -> i & 0xff).collect(Collectors.toList());
+    final List<Integer> expect = intValues.stream().map(i -> i & 0xff).collect(Collectors.toList());
     assertEquals(expect, actual);
   }
 }
