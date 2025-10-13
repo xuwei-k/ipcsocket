@@ -91,12 +91,15 @@ public class ServerSocketWrapperTest {
 
   @Test
   public void writeInt() throws Throwable {
+    System.out.println("writeInt");
     try {
       intValues.forEach(
           x -> {
             try {
+              System.out.print("writeInt " + x + " ");
               server.write(x);
             } catch (IOException e) {
+              System.out.println(e);
               throw new RuntimeException(e);
             }
           });
