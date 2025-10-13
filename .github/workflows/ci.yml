@@ -3,6 +3,7 @@ on: [pull_request, push]
 
 jobs:
   test:
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
