@@ -128,8 +128,8 @@ public class ServerSocketWrapperTest {
 
   @Test
   public void writeByteArrayOffsetLength() throws Throwable {
-    final int offset = 100;
-    final int length = 200;
+    final int offset = 20;
+    final int length = 30;
     final byte[] array = byteArray();
     try {
       server.write(array, offset, length);
