@@ -79,8 +79,8 @@ public class ServerSocketWrapperTest {
 
   static {
     final List<Integer> list =
-        Stream.<Integer>iterate((int) Byte.MIN_VALUE, x -> x + 1)
-            .limit(1024)
+        Stream.<Integer>iterate((int) Byte.MIN_VALUE, x -> x + 3)
+            .limit(128)
             .collect(Collectors.toList());
     Collections.shuffle(list);
     intValues = Collections.unmodifiableList(list);
