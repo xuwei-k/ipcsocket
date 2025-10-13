@@ -104,6 +104,7 @@ buildWin32X86_64 / skip := {
   }, _.isEmpty)
 }
 Test / fork := true
+testOptions += Tests.Argument(TestFrameworks.JUnit, "-v")
 clangfmt / fileInputs += baseDirectory.value.toGlob / "jni" / "*.c"
 commands += Command.command("buildNativeArtifacts") { state =>
   "buildLinuxX86_64" :: "buildLinuxAarch64" :: "buildDarwin" :: "buildWin32X86_64" :: state

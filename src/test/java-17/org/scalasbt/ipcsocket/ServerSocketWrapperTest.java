@@ -29,6 +29,7 @@ public class ServerSocketWrapperTest {
 
   @Before
   public void before() throws IOException, ReflectiveOperationException {
+    System.out.println("before 1");
     dir = Files.createTempDirectory(ServerSocketWrapperTest.class.getSimpleName());
     socketPath = dir.resolve("socket");
     Files.deleteIfExists(socketPath);
@@ -40,13 +41,16 @@ public class ServerSocketWrapperTest {
     client = SocketChannel.open(StandardProtocolFamily.UNIX);
     client.connect(UnixDomainSocketAddress.of(socketPath.toFile().getAbsolutePath()));
     server = serverSocket.accept();
+    System.out.println("before 2");
   }
 
   @After
   public void after() throws IOException {
+    System.out.println("after 1");
     serverSocket.close();
     Files.deleteIfExists(socketPath);
     Files.deleteIfExists(dir);
+    System.out.println("after 2");
   }
 
   private List<Byte> readAll(SocketChannel client) throws IOException {

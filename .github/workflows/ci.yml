@@ -9,21 +9,6 @@ jobs:
       matrix:
         include:
           - os: ubuntu-22.04
-            java: 8
-            jobtype: 1
-          - os: ubuntu-22.04
-            java: 25
-            jobtype: 2
-          - os: macos-13
-            java: 8
-            jobtype: 1
-          - os: macos-14
-            java: 8
-            jobtype: 1
-          - os: windows-latest
-            java: 8
-            jobtype: 1
-          - os: windows-latest
             java: 25
             jobtype: 2
     runs-on: ${{ matrix.os }}
