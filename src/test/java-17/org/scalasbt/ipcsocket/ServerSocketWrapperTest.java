@@ -91,12 +91,13 @@ public class ServerSocketWrapperTest {
 
   @Test
   public void writeInt() throws Throwable {
-    System.out.println("writeInt");
+    System.out.println("writeInt 1");
     try {
+      System.out.println(intValues.size());
       intValues.forEach(
           x -> {
             try {
-              System.out.print("writeInt " + x + " ");
+              System.out.println("writeInt " + x + " ");
               server.write(x);
             } catch (IOException e) {
               System.out.println(e);
@@ -104,10 +105,14 @@ public class ServerSocketWrapperTest {
             }
           });
     } finally {
+      System.out.println("writeInt finally");
       server.close();
     }
+    System.out.println("writeInt 2");
     final List<Byte> actual = readAll(client);
+    System.out.println("writeInt 3");
     assertEquals(byteValues, actual);
+    System.out.println("writeInt 4");
   }
 
   @Test
