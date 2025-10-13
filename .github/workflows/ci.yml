@@ -11,6 +11,9 @@ jobs:
           - os: ubuntu-22.04
             java: 25
             jobtype: 2
+          - os: ubuntu-latest
+            java: 25
+            jobtype: 2
     runs-on: ${{ matrix.os }}
     env:
       JAVA_OPTS: -Xms800M -Xmx2G -Xss6M -XX:ReservedCodeCacheSize=128M -server -Dsbt.io.virtual=false -Dfile.encoding=UTF-8
