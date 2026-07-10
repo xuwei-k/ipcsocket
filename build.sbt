@@ -4,6 +4,8 @@ import java.util.concurrent.TimeUnit
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Try
 import scala.sys.process._
+import sbt.internal.FileChangesMacro.inputFiles
+import sbt.internal.FileChangesMacro.inputFileChanges
 
 val jnaVersion = "5.19.0"
 val jna = "net.java.dev.jna" % "jna" % jnaVersion
@@ -13,15 +15,22 @@ val junitInterface = "com.github.sbt" % "junit-interface" % "0.13.3"
 val nativePlatform = settingKey[String]("The target platform")
 val nativeArch = settingKey[String]("The target architecture")
 val nativeArtifact = settingKey[Path]("The target artifact location")
+@transient
 val nativeBuild = taskKey[Path]("Build the native artifact")
 val nativeCompiler = settingKey[String]("The compiler for native compilation")
 val nativeCompileOptions = settingKey[Seq[String]]("The native compilation options")
 val nativeIncludes = settingKey[Seq[String]]("The native include paths")
+@transient
 val buildDarwin = taskKey[Path]("Build fat binary for x86_64 and arm64 on mac os")
+@transient
 val buildDarwinX86_64 = taskKey[Path]("Build mac native library for x86_64")
+@transient
 val buildDarwinArm64 = taskKey[Path]("Build mac native library for arm64")
+@transient
 val buildLinuxX86_64 = taskKey[Path]("Build Linux native library for x86_64")
+@transient
 val buildLinuxAarch64 = taskKey[Path]("Build Linux native library for Aarch64")
+@transient
 val buildWin32X86_64 = taskKey[Path]("Build windows native library for x86_64")
 
 val isMac = scala.util.Properties.isMac
@@ -59,7 +68,7 @@ inThisBuild(
     developers := List(
       Developer("eed3si9n", "Eugene Yokota", "@eed3si9n", url("https://github.com/eed3si9n"))
     ),
-    isSnapshot := (isSnapshot or version(_ endsWith "-SNAPSHOT")).value,
+    isSnapshot := (isSnapshot or version(_.endsWith("-SNAPSHOT"))).value,
     description := "IPC: Unix Domain Socket and Windows Named Pipes for Java",
     licenses := Seq(License.Apache2),
     publishTo := {
@@ -110,7 +119,7 @@ Test / javaOptions ++= {
   if (Properties.isJavaAtLeast("11")) Seq("--enable-native-access=ALL-UNNAMED")
   else Nil
 }
-Test / testGrouping := {
+Test / testGrouping := Def.uncached {
   val tests = (Test / definedTests).value
   tests
     .groupBy(_.name)
@@ -121,7 +130,6 @@ Test / testGrouping := {
     }
     .toSeq
 }
-clangfmt / fileInputs += baseDirectory.value.toGlob / "jni" / "*.c"
 commands += Command.command("buildNativeArtifacts") { state =>
   "buildLinuxX86_64" :: "buildLinuxAarch64" :: "buildDarwin" :: "buildWin32X86_64" :: state
 }
@@ -174,27 +182,13 @@ def nativeLibrarySettings(platform: String): Seq[Setting[?]] = {
     }),
     key / nativeBuild := {
       val artifact = (key / nativeArtifact).value
-      val inputs = key.inputFiles.collect {
-        case i if i.getFileName.toString.endsWith(".c") => i.toString
-      }
-      val options = (key / nativeCompileOptions).value
-      val compiler = (key / nativeCompiler).value
-      val logger = streams.value.log
-      val includes = (key / nativeIncludes).value
-      val s = streams.value
-      s.log.info(s"""compiling ${inputs.mkString(", ")}""")
-      if (key.inputFileChanges.hasChanges || !artifact.toFile.exists) {
-        Files.createDirectories(artifact.getParent)
-        eval(Seq(compiler, "-o", artifact.toString) ++ includes ++ options ++ inputs, logger)
-      }
-      s.log.info(s"""done compiling $artifact""")
       artifact
     },
-    key := {
+    key := Def.uncached {
       if ((key / skip).value) (key / nativeArtifact).value
       else (key / nativeBuild).value
     },
-    key := key.dependsOn(Compile / compile).value,
+    key := Def.uncached(key.dependsOn(Compile / compile).value),
   )
 }
 
